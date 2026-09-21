@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>RedCirclePRO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --green:#00893D; --green-d:#006B30; --red:#E30613; --red-d:#B00410;
+  --amber:#F5A623;
+  --bg:#E9EBED; --surface:#FFFFFF; --surface2:#F4F5F6; --surface3:#FBFBFC;
+  --text:#1A1D1F; --muted:#6B7075; --border:#D5D8DB; --shadow:rgba(0,0,0,.08);
+}
+:root[data-theme="dark"]{
+  --bg:#232629; --surface:#2E3236; --surface2:#383D42; --surface3:#31363B;
+  --text:#EDEFF1; --muted:#A0A6AC; --border:#41474D; --shadow:rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);
+  font-size:16px;line-height:1.4;-webkit-tap-highlight-color:transparent;
+}
+.tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+button{font-family:inherit;font-size:1rem;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:1rem;color:var(--text);background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:.6rem .7rem;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:-1px;border-color:var(--green)}
+label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:.3rem;font-weight:600}
+
+/* top bar */
+.topbar{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;background:var(--surface);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:.55rem;font-weight:800;letter-spacing:-.01em;font-size:1.15rem}
+.brand .dot{width:16px;height:16px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 25%,transparent)}
+.brand .pro{color:var(--green)}
+.brand .ver{font-size:.7rem;font-weight:700;color:var(--muted);margin-left:.4rem;align-self:flex-end;padding-bottom:2px}
+#refreshBtn.update{background:var(--green);color:#fff;border-color:var(--green);animation:pulse 1.2s infinite}
+.spacer{flex:1}
+.iconbtn{padding:.45rem .7rem;border-radius:8px;border:1px solid var(--border);background:var(--surface2);font-weight:600;font-size:.85rem}
+.iconbtn:hover{background:var(--surface3)}
+
+.wrap{max-width:1100px;margin:0 auto;padding:1.1rem}
+.screen{display:none}
+.screen.active{display:block}
+
+h2{font-size:1.35rem;font-weight:800;letter-spacing:-.01em;margin-bottom:.15rem}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:1.1rem}
+
+.btn{background:var(--green);color:#fff;font-weight:700;padding:.75rem 1.1rem;border-radius:10px}
+.btn:hover{background:var(--green-d)}
+.btn.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn.secondary:hover{background:var(--surface2)}
+.btn.danger{background:var(--red)}.btn.danger:hover{background:var(--red-d)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:.6rem;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem}
+@media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem;box-shadow:0 1px 3px var(--shadow)}
+.field{margin-bottom:.9rem}
+
+/* project list */
+.plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.8rem;margin-top:1rem}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:left;
+  display:flex;flex-direction:column;gap:.3rem}
+.pcard:hover{border-color:var(--green);box-shadow:0 3px 10px var(--shadow)}
+.pcard .pname{font-weight:800;font-size:1.05rem}
+.pcard .pmeta{color:var(--muted);font-size:.82rem}
+.pcard .pfoot{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem;font-size:.78rem;color:var(--muted)}
+.pcard .del{color:var(--red);font-weight:700;font-size:.78rem}
+.empty{border:2px dashed var(--border);border-radius:14px;padding:2rem;text-align:center;color:var(--muted);margin-top:1rem}
+
+/* tracking */
+.statusbar{border-radius:16px;padding:1.2rem 1.4rem;color:#fff;display:flex;align-items:center;gap:1.2rem;margin-bottom:1rem;
+  transition:background .25s}
+.statusbar.prod{background:linear-gradient(135deg,var(--green),var(--green-d))}
+.statusbar.down{background:linear-gradient(135deg,var(--red),var(--red-d))}
+.statuscircle{width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none}
+.statuscircle .ring{width:54px;height:54px;border-radius:50%;border:6px solid #fff}
+.statusbar.down .statuscircle .ring{animation:pulse 1.1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.6)}70%{box-shadow:0 0 0 14px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.statustext{flex:1}
+.statustext .lbl{font-size:.85rem;opacity:.85;font-weight:600}
+.statustext .st{font-size:1.9rem;font-weight:900;letter-spacing:-.02em;line-height:1.05}
+.statustext .el{font-size:1.1rem;opacity:.95}
+.wallclock{text-align:right}
+.wallclock .wt{font-size:1.6rem;font-weight:800}
+.wallclock .wd{font-size:.8rem;opacity:.85}
+@media(prefers-reduced-motion:reduce){.statusbar.down .statuscircle .ring{animation:none}}
+
+.trackmeta{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:.7rem 1rem;margin-bottom:1rem;font-size:.85rem}
+.trackmeta b{color:var(--muted);font-weight:600;margin-right:.35rem}
+.tprmpill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:.15rem .6rem;font-weight:700}
+
+.stations{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem}
+.station{border-radius:14px;padding:1rem;border:2px solid;cursor:pointer;user-select:none;position:relative;transition:transform .06s}
+.station:active{transform:scale(.98)}
+.station.prod{border-color:var(--green);background:color-mix(in srgb,var(--green) 8%,var(--surface))}
+.station.down{border-color:var(--red);background:color-mix(in srgb,var(--red) 10%,var(--surface))}
+.station .sname{font-weight:800;font-size:1.05rem;display:flex;align-items:center;gap:.4rem}
+.station .prio{font-size:.68rem;background:var(--green);color:#fff;border-radius:6px;padding:.1rem .35rem;font-weight:800;letter-spacing:.03em}
+.station .sstate{font-weight:800;margin:.5rem 0 .1rem;font-size:1.15rem}
+.station.prod .sstate{color:var(--green)}
+.station.down .sstate{color:var(--red)}
+.station .stimer{font-size:1.5rem;font-weight:800}
+.station .scat{font-size:.82rem;color:var(--muted);margin-top:.35rem;min-height:1.1em}
+.station .hint{font-size:.72rem;color:var(--muted);margin-top:.5rem}
+
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin:1rem 0}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem}
+.stat .k{font-size:.78rem;color:var(--muted);font-weight:600}
+.stat .v{font-size:1.5rem;font-weight:900;letter-spacing:-.01em}
+.stat .v.g{color:var(--green)}.stat .v.r{color:var(--red)}
+.stat.hl{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)}
+
+.pareto{margin-top:.4rem}
+.pbar{display:flex;align-items:center;gap:.6rem;margin:.35rem 0;font-size:.85rem}
+.pbar .plab{width:150px;flex:none;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar .ptrack{flex:1;background:var(--surface2);border-radius:6px;height:16px;overflow:hidden}
+.pbar .pfill{height:100%;border-radius:6px}
+.pbar .pval{width:70px;text-align:right;flex:none;color:var(--muted)}
+
+/* log table */
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:820px}
+th,td{padding:.55rem .6rem;text-align:left;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+th{background:var(--surface2);font-size:.72rem;text-transform:none;color:var(--muted);font-weight:700;position:sticky;top:0}
+tr.down td{background:color-mix(in srgb,var(--red) 5%,transparent)}
+td select{padding:.3rem .4rem;min-width:130px}
+td input{padding:.3rem .4rem}
+.badge{display:inline-block;border-radius:6px;padding:.12rem .5rem;font-weight:800;font-size:.72rem;color:#fff}
+.tag-prod{background:var(--green)}.tag-down{background:var(--red)}
+.inprog{color:var(--amber);font-weight:700;font-size:.72rem}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.overlay.open{display:flex}
+@media(min-width:641px){.overlay{align-items:center}}
+.modal{background:var(--surface);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:1.2rem;max-height:92vh;overflow:auto}
+@media(min-width:641px){.modal{border-radius:18px}}
+.modal h3{font-size:1.2rem;font-weight:800;margin-bottom:.2rem}
+.modal .mh{color:var(--muted);font-size:.85rem;margin-bottom:1rem}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.9rem}
+.chip{border-radius:10px;padding:.75rem .6rem;font-weight:700;text-align:left;color:#fff;border:2px solid transparent;
+  display:flex;align-items:center;gap:.5rem;font-size:.9rem}
+.chip .cd{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.9);flex:none}
+.chip.sel{outline:3px solid var(--text);outline-offset:2px}
+.reasonlist{max-height:40vh;overflow:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:.9rem}
+.ritem{display:flex;align-items:center;gap:.6rem;padding:.6rem .7rem;width:100%;text-align:left;border-bottom:1px solid var(--border)}
+.ritem:last-child{border-bottom:none}
+.ritem:hover{background:var(--surface2)}
+.ritem.sel{background:color-mix(in srgb,var(--green) 16%,var(--surface))}
+.ritem .cd{width:14px;height:14px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.15)}
+.ritem .rc{font-weight:800;width:34px;flex:none;font-variant-numeric:tabular-nums}
+.ritem .rn{flex:1}
+.ritem.main{font-weight:800;background:var(--surface3)}
+.reasonmgr .rrow{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
+.reasonmgr input[type=color]{width:44px;height:38px;padding:2px;flex:none}
+.reasonmgr .rname{flex:1}
+.reasonmgr .rdel{color:var(--red);font-weight:800;padding:.4rem .6rem;flex:none}
+.toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);
+  padding:.7rem 1.1rem;border-radius:10px;font-weight:600;z-index:80;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.stationnames{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
+.snrow{display:flex;align-items:center;gap:.5rem}
+.snrow input[type=radio]{width:auto}
+.snrow .rlab{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.chiplist{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+.pchip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:.25rem .6rem;font-size:.85rem;font-weight:600;display:flex;gap:.4rem;align-items:center}
+.pchip .x{color:var(--red);font-weight:800;cursor:pointer}
+
+/* charts report */
+.stationreport{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:1.1rem}
+.stationreport h3{font-size:1.15rem;font-weight:800;margin-bottom:.2rem;display:flex;align-items:center;gap:.5rem}
+.srmeta{color:var(--muted);font-size:.82rem;margin-bottom:.9rem}
+.charts2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:640px){.charts2{grid-template-columns:1fr}}
+.chartbox{position:relative;height:230px}
+.chartlabel{font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:.4rem}
+.tl{margin-bottom:1rem}
+.tlbar{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.tlseg{height:100%;min-width:1px}
+.tlaxis{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:.25rem}
+.tlleg{display:flex;flex-wrap:wrap;gap:.4rem 1rem;font-size:.75rem;margin-top:.5rem}
+.tlleg span{display:inline-flex;align-items:center;gap:.35rem}
+.tlleg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.nodata{color:var(--muted);font-size:.85rem;padding:1rem;text-align:center}
+
+/* RCA / 5why / actions */
+.rcasection{border:1px solid var(--border);border-radius:12px;padding:.9rem;margin-bottom:.9rem;background:var(--surface2)}
+.rcahead{font-weight:800;font-size:.95rem;margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem}
+.whynode{margin-top:.4rem}
+.whyrow{display:flex;align-items:center;gap:.4rem}
+.whylab{font-size:.68rem;font-weight:800;color:var(--muted);width:52px;flex:none;text-transform:uppercase}
+.whytext{flex:1}
+.whybtn{font-size:.72rem;font-weight:700;padding:.35rem .5rem;border:1px solid var(--border);border-radius:7px;background:var(--surface);flex:none;white-space:nowrap}
+.whybtn:hover{background:var(--surface3)}
+.whybtn.del{color:var(--red)}
+.whyconn{border-left:2px solid var(--border);margin-left:8px;padding-left:8px}
+.actcard{border:1px solid var(--border);border-radius:10px;padding:.7rem;margin-bottom:.6rem;background:var(--surface)}
+.actgrid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem}
+@media(max-width:560px){.actgrid{grid-template-columns:1fr}}
+.actcard .actfoot{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.actdel{color:var(--red);font-weight:800;font-size:.8rem;flex:none}
+.statuspill{font-size:.7rem;font-weight:800;border-radius:6px;padding:.12rem .45rem;color:#fff}
+.st-open{background:#B6BAC2}.st-prog{background:#F5A623}.st-done{background:#00893D}
+/* report clickable reasons */
+.rxlist{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
+.rxchip{display:inline-flex;align-items:center;gap:.45rem;border:1px solid var(--border);border-radius:20px;padding:.3rem .7rem;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--surface)}
+.rxchip:hover{border-color:var(--green);box-shadow:0 2px 6px var(--shadow)}
+.rxchip .cd{width:13px;height:13px;border-radius:4px;flex:none}
+.rxchip .cnt{color:var(--muted);font-weight:700}
+.rxchip .abadge{background:var(--green);color:#fff;border-radius:10px;padding:0 .4rem;font-size:.68rem;font-weight:800}
+.tlseg{cursor:pointer}
+.actsummary{margin-top:.8rem;border-top:1px dashed var(--border);padding-top:.7rem}
+.actline{font-size:.82rem;margin:.25rem 0}
+.actline b{font-weight:700}
+.rc-hint{font-size:.75rem;color:var(--muted);margin-top:.5rem}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span>RedCircle<span class="pro">PRO</span><span class="ver" id="appVer"></span></div>
+  <div class="spacer"></div>
+  <button class="iconbtn" id="backBtn" style="display:none">← Projects</button>
+  <button class="iconbtn" id="refreshBtn" title="Reload latest version">↻</button>
+  <button class="iconbtn" id="themeBtn">◐ Theme</button>
+</div>
+
+<div class="wrap">
+
+<!-- SCREEN 1: PROJECTS -->
+<section class="screen active" id="scr-projects">
+  <h2>Projects</h2>
+  <div class="sub">Pick a line to continue, or start a new one.</div>
+  <div class="row">
+    <button class="btn" id="newProjBtn">+ New project</button>
+    <button class="btn secondary" id="importBtn">Import CSV</button>
+    <input type="file" id="importFile" accept=".csv" style="display:none">
+  </div>
+  <div id="projectList"></div>
+</section>
+
+<!-- SCREEN 2: SETUP -->
+<section class="screen" id="scr-setup">
+  <h2 id="setupTitle">New project</h2>
+  <div class="sub">Set up the line. You can change most of this later.</div>
+  <div class="card">
+    <div class="field"><label>Project name</label><input id="f-name" placeholder="e.g. Vs7 sequential line"></div>
+    <div class="grid2">
+      <div class="field"><label>Locality</label><input id="f-locality" placeholder="e.g. Wooster OH – Hall 3"></div>
+      <div class="field"><label>Machine / line</label><input id="f-machine" placeholder="e.g. Robodrill cell"></div>
+      <div class="field"><label>Equipment number</label><input id="f-equip" placeholder="e.g. EQ-10425"></div>
+      <div class="field"><label>Running TPRM (Typorozmer)</label><input id="f-tprm" placeholder="e.g. 6205-2RSR"></div>
+      <div class="field"><label>Red circle performed by</label><input id="f-observer" placeholder="Observer name"></div>
+      <div class="field"><label>Planned takt time (s)</label><input type="number" id="f-taktp" min="0" step="0.1" placeholder="e.g. 12"></div>
+      <div class="field"><label>Measured takt time (s)</label><input type="number" id="f-taktm" min="0" step="0.1" placeholder="e.g. 13.5"></div>
+    </div>
+    <div class="field">
+      <label>Personnel</label>
+      <div class="row"><input id="f-person" placeholder="Add a name and press Enter" style="flex:1"><button class="btn secondary" id="addPersonBtn">Add</button></div>
+      <div class="chiplist" id="personList"></div>
+    </div>
+    <div class="field">
+      <label>Line type</label>
+      <select id="f-linetype">
+        <option value="connected">Connected / sequential line — bottleneck governs</option>
+        <option value="independent">Independent machines — averaged</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Number of stations</label>
+      <input type="number" id="f-nstations" min="1" max="20" value="1">
+      <div class="stationnames" id="stationNames"></div>
+      <div class="hint" style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Mark the bottleneck station — its state drives the main status banner (the constraint governs line output).</div>
+    </div>
+    <div class="row" style="margin-top:.5rem">
+      <button class="btn" id="startTrackBtn">Start tracking →</button>
+      <button class="btn secondary" id="cancelSetupBtn">Cancel</button>
+    </div>
+  </div>
+</section>
+
+<!-- SCREEN 3: TRACKING -->
+<section class="screen" id="scr-track">
+  <div class="statusbar prod" id="statusBar">
+    <div class="statuscircle"><div class="ring"></div></div>
+    <div class="statustext">
+      <div class="lbl" id="stPrioLbl">Bottleneck: —</div>
+      <div class="st" id="stState">PRODUCTION</div>
+      <div class="el tnum" id="stElapsed">00:00:00</div>
+    </div>
+    <div class="wallclock">
+      <div class="wt tnum" id="wallTime">--:--:--</div>
+      <div class="wd" id="wallDate"></div>
+    </div>
+  </div>
+
+  <div class="trackmeta" id="trackMeta"></div>
+
+  <div class="row" style="margin-bottom:1rem">
+    <button class="iconbtn" id="editProjBtn">✎ Edit project</button>
+    <button class="iconbtn" id="changeTprmBtn">↻ Change TPRM</button>
+    <button class="iconbtn" id="manageReasonsBtn">⚙ Manage reasons</button>
+    <button class="iconbtn" id="viewLogBtn">☰ Log &amp; report</button>
+  </div>
+
+  <div class="stations" id="stationGrid"></div>
+</section>
+
+<!-- SCREEN 4: LOG / REPORT -->
+<section class="screen" id="scr-log">
+  <h2 id="logTitle">Log &amp; report</h2>
+  <div class="sub" id="logSub"></div>
+
+  <div class="summary" id="summaryCards"></div>
+  <div id="linePerfNote" class="rc-hint" style="margin:-.4rem 0 1rem"></div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <label style="margin-bottom:.6rem">Downtime by reason</label>
+    <div class="pareto" id="pareto"></div>
+  </div>
+
+  <div class="row" style="margin-bottom:1rem">
+    <button class="btn" id="chartsBtn">📊 Charts report</button>
+    <button class="btn" id="emailBtn">✉ Email report</button>
+    <button class="btn secondary" id="csvBtn">⬇ Download CSV</button>
+    <button class="btn secondary" id="pdfBtn">⬇ Download PDF (log)</button>
+    <button class="btn secondary" id="backToTrackBtn">← Back to tracking</button>
+  </div>
+
+  <div class="tablewrap">
+    <table id="logTable">
+      <thead><tr>
+        <th>Station</th><th>Type</th><th>Reason</th><th>TPRM</th>
+        <th>Start</th><th>End</th><th>Duration</th><th>Note</th>
+      </tr></thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>
+  <div class="hint" style="font-size:.75rem;color:var(--muted);margin-top:.5rem">Reason and note are editable here and on the tracking screen. In-progress entries update live.</div>
+</section>
+
+<!-- SCREEN 4b: EDIT PROJECT -->
+<section class="screen" id="scr-edit">
+  <h2>Edit project</h2>
+  <div class="sub">Update line details. Timing and log are preserved.</div>
+  <div class="card">
+    <div class="field"><label>Project name</label><input id="e-name"></div>
+    <div class="grid2">
+      <div class="field"><label>Locality</label><input id="e-locality"></div>
+      <div class="field"><label>Machine / line</label><input id="e-machine"></div>
+      <div class="field"><label>Equipment number</label><input id="e-equip"></div>
+      <div class="field"><label>Red circle performed by</label><input id="e-observer"></div>
+      <div class="field"><label>Planned takt time (s)</label><input type="number" id="e-taktp" min="0" step="0.1"></div>
+      <div class="field"><label>Measured takt time (s)</label><input type="number" id="e-taktm" min="0" step="0.1"></div>
+      <div class="field"><label>Line type</label><select id="e-linetype">
+        <option value="connected">Connected / sequential line — bottleneck governs</option>
+        <option value="independent">Independent machines — averaged</option></select></div>
+    </div>
+    <div class="field">
+      <label>Personnel</label>
+      <div class="row"><input id="e-person" placeholder="Add a name and press Enter" style="flex:1"><button class="btn secondary" id="eAddPersonBtn">Add</button></div>
+      <div class="chiplist" id="ePersonList"></div>
+    </div>
+    <div class="field">
+      <label>Stations</label>
+      <div class="stationnames" id="editStations"></div>
+      <button class="btn secondary" id="eAddStationBtn" style="margin-top:.5rem">+ Add station</button>
+      <div class="hint" style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Removing a station also removes its log entries.</div>
+    </div>
+    <div class="row" style="margin-top:.5rem">
+      <button class="btn" id="saveEditBtn">Save changes</button>
+      <button class="btn secondary" id="cancelEditBtn">Cancel</button>
+    </div>
+  </div>
+</section>
+
+<!-- SCREEN 5: CHARTS REPORT -->
+<section class="screen" id="scr-report">
+  <h2 id="reportTitle">Charts report</h2>
+  <div class="sub" id="reportSub"></div>
+  <div class="row" style="margin-bottom:1rem">
+    <button class="btn secondary" id="reportPdfBtn">⬇ Download report PDF</button>
+    <button class="btn secondary" id="backToLogBtn">← Back to log</button>
+  </div>
+  <div id="reportBody"></div>
+</section>
+
+</div>
+
+<!-- DOWNTIME MODAL -->
+<div class="overlay" id="downOverlay">
+  <div class="modal">
+    <h3>Downtime — <span id="downStationName"></span></h3>
+    <div class="mh">Search a Schaeffler ASL code or reason. You can change it later.</div>
+    <input id="downSearch" placeholder="Filter by code or text…" style="margin-bottom:.6rem">
+    <div class="reasonlist" id="downList"></div>
+    <div class="field"><label>Note (optional)</label><textarea id="downNote" rows="2" placeholder="What happened?"></textarea></div>
+    <div class="row">
+      <button class="btn danger" id="confirmDownBtn" disabled>Log downtime</button>
+      <button class="btn secondary" id="cancelDownBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- REASONS MODAL -->
+<div class="overlay" id="reasonOverlay">
+  <div class="modal reasonmgr">
+    <h3>Downtime reasons</h3>
+    <div class="mh">Add, rename, recolor or remove. Placeholders for now — swap in your phase-2 list.</div>
+    <div id="reasonRows"></div>
+    <button class="btn secondary wide" id="addReasonBtn" style="margin-bottom:.8rem">+ Add reason</button>
+    <button class="btn wide" id="saveReasonsBtn">Done</button>
+  </div>
+</div>
+
+<!-- TPRM MODAL -->
+<div class="overlay" id="tprmOverlay">
+  <div class="modal">
+    <h3>Change TPRM</h3>
+    <div class="mh">Logs a new Typorozmer from now on. Past entries keep their TPRM.</div>
+    <div class="field"><label>New TPRM</label><input id="newTprmInput" placeholder="e.g. 6206-2RSR"></div>
+    <div class="row">
+      <button class="btn" id="confirmTprmBtn">Change TPRM</button>
+      <button class="btn secondary" id="cancelTprmBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- RCA (5why + actions) MODAL -->
+<div class="overlay" id="rcaOverlay">
+  <div class="modal" style="max-width:700px">
+    <h3><span class="cd" id="rcaSwatch" style="width:16px;height:16px;border-radius:5px;display:inline-block;vertical-align:middle;margin-right:.3rem"></span><span id="rcaTitle"></span></h3>
+    <div class="mh" id="rcaSub"></div>
+    <div class="rcasection">
+      <div class="rcahead">🔍 5 Why — root cause</div>
+      <div id="whyTree"></div>
+      <div class="rc-hint">+Why = go deeper · +Cause = parallel cause (branch) · ✕ = remove.</div>
+    </div>
+    <div class="rcasection">
+      <div class="rcahead">✅ Corrective actions</div>
+      <div id="actionList"></div>
+      <button class="btn secondary wide" id="addActionBtn">+ Add action</button>
+    </div>
+    <button class="btn wide" id="rcaDoneBtn">Done</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const APP_VERSION="0.9";
+const LS_KEY="redcirclepro_projects_v1";
+const LS_THEME="redcirclepro_theme";
+
+function hardRefresh(){
+  const base=location.href.split("?")[0].split("#")[0];
+  location.replace(base+"?v="+Date.now());
+}
+async function checkForUpdate(){
+  if(location.protocol==="file:")return; // no server to check against
+  try{
+    const base=location.href.split("?")[0].split("#")[0];
+    const res=await fetch(base+"?_="+Date.now(),{cache:"no-store"});
+    if(!res.ok)return;
+    const txt=await res.text();
+    const m=txt.match(/APP_VERSION\s*=\s*["']([\d.]+)["']/);
+    if(m){
+      const remote=parseFloat(m[1]),local=parseFloat(APP_VERSION);
+      if(remote>local){
+        const btn=document.getElementById("refreshBtn");
+        btn.classList.add("update");btn.title="Update available: v"+m[1]+" — tap to reload";
+        toast("New version v"+m[1]+" available — tap ↻");
+      }
+    }
+  }catch(e){}
+}
+
+const ASL_COLORS={F:"#00893D",A:"#1874CD",L:"#EEAF70",N:"#A1C861",O:"#FFE160",RO:"#FFE160",R:"#40A0A0",RE:"#40A0A0",S:"#B6BAC2"};
+const ASL_CODES=[
+  ["10","S","Mechanical repair"],
+  ["11","L","Long-term repair"],
+  ["12","O","Waiting for mechanic"],
+  ["13","L","Movement of machinery"],
+  ["15","S","Mechanical maintenance work on machinery"],
+  ["16","S","Machinery fire, storm damage, power failure"],
+  ["17","S","Operator repair"],
+  ["20","L","Free capacity"],
+  ["21","L","Material missing, parts missing"],
+  ["22","L","Previous machine idle"],
+  ["23","L","Subsequent machine idle"],
+  ["28","L","Planned machine standstill"],
+  ["29","L","Short-time work"],
+  ["30","A","Tooling problem"],
+  ["31","A","Tooling manufacture defect"],
+  ["32","O","Missing tooling"],
+  ["33","A","Tooling repair/correction"],
+  ["34","A","Tooling break"],
+  ["38","N","Additional times (production order related)"],
+  ["40","L","Absent personnel"],
+  ["42","L","Personnel absent due to breaks"],
+  ["43","L","Personnel absent due to holiday period"],
+  ["47","L","Internal training"],
+  ["48","L","Flexi time and paid general visits"],
+  ["49","L","Shop floor meeting"],
+  ["50","S","Electrical repair"],
+  ["51","S","Electronic repair, CNC control defect"],
+  ["53","O","Waiting for the electronics engineer/electrician"],
+  ["55","S","Electronic maintenance work"],
+  ["57","S","Special electrical / electronic problems"],
+  ["60","R","Setup"],
+  ["62","RE","Initial matching"],
+  ["63","R","Repeated matching"],
+  ["64","RO","Organizational setup"],
+  ["65","R","Tooling problem during setup"],
+  ["66","R","Measuring equipment problem during setup"],
+  ["68","R","Inspection during setup"],
+  ["69","R","Waiting time during setup"],
+  ["70","O","Testing"],
+  ["71","O","Tests carried out by other departments (Engineering, QA)"],
+  ["72","O","Tests carried out by the Production department"],
+  ["80","A","Post-setting"],
+  ["81","A","Post-setting due to defective material"],
+  ["82","O","Waiting period during post-setting"],
+  ["83","A","Grinding wheel changeover (large wheels)"],
+  ["85","N","Supply and disposal"],
+  ["86","A","Automatic measurement equipment malfunction"],
+  ["87","A","Technology-related post-setting"],
+  ["89","F","Productive 2"],
+  ["90","O","Waiting time"],
+  ["91","O","Change of detailed planning"],
+  ["92","O","Missing work documents"],
+  ["93","S","Familiarization of new employees"],
+  ["94","S","Waiting time for warming up and cooling down"],
+  ["96","O","Waiting time for Quality Assurance"],
+  ["99","S","Cleaning of machinery"]
+];
+const DEFAULT_REASONS=ASL_CODES.map(([code,group,name])=>({code,group,name,color:ASL_COLORS[group]||"#9AA0A6"}));
+
+let state={projects:[],activeId:null};
+let pendingPersonnel=[];
+let downContext={stationId:null,color:null,reason:null};
+
+/* ---------- persistence ---------- */
+function load(){
+  try{const raw=localStorage.getItem(LS_KEY);state.projects=raw?JSON.parse(raw):[];}catch(e){state.projects=[];}
+}
+function save(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(state.projects));}
+  catch(e){toast("Could not save — storage full or blocked");}
+}
+function activeProject(){return state.projects.find(p=>p.id===state.activeId)||null;}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+/* ---------- helpers ---------- */
+function fmtDur(ms){
+  if(ms<0)ms=0;let s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
+function fmtDurWords(ms){
+  if(ms<0)ms=0;let s=Math.round(ms/1000);
+  const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;
+  let o=[];if(h)o.push(h+"h");if(m)o.push(m+"m");o.push(s+"s");return o.join(" ");
+}
+function fmtTime(ts){if(!ts)return"";const d=new Date(ts);return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});}
+function fmtDateTime(ts){if(!ts)return"";return new Date(ts).toLocaleString();}
+function esc(s){return(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200);}
+function currentTprm(p){return p.tprmHistory.length?p.tprmHistory[p.tprmHistory.length-1].tprm:"";}
+function reasonLabel(r){return(r.code?r.code+" — ":"")+r.name;}
+function tprmAt(p,ts){let v="";for(const e of p.tprmHistory){if(e.at<=ts)v=e.tprm;}return v;}
+
+/* segments incl. currently open ones (snapshotted with end=now) */
+function allSegments(p,liveEnd){
+  const now=liveEnd||Date.now();
+  const out=p.segments.map(s=>({...s}));
+  p.stations.forEach(st=>{
+    if(st.open){
+      out.push({id:st.id,stationId:st.id,type:st.state,category:st.category||"",color:st.color||"",
+        note:st.note||"",start:st.openStart,end:now,tprm:tprmAt(p,st.openStart),live:true});
+    }
+  });
+  return out.sort((a,b)=>a.start-b.start);
+}
+function stationName(p,id){const s=p.stations.find(x=>x.id===id);return s?s.name:id;}
+
+/* ---------- navigation ---------- */
+function show(scr){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("scr-"+scr).classList.add("active");
+  document.getElementById("backBtn").style.display=(scr==="projects")?"none":"inline-block";
+  window.scrollTo(0,0);
+}
+
+/* ---------- SCREEN 1: projects ---------- */
+function renderProjects(){
+  const el=document.getElementById("projectList");
+  if(!state.projects.length){el.innerHTML='<div class="empty">No projects yet. Start a new one or import a CSV.</div>';return;}
+  const sorted=[...state.projects].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  el.innerHTML='<div class="plist">'+sorted.map(p=>{
+    const segs=allSegments(p);
+    const down=segs.filter(s=>s.type==="downtime").reduce((a,s)=>a+(s.end-s.start),0);
+    return `<div class="pcard" data-id="${p.id}">
+      <div class="pname">${esc(p.name)}</div>
+      <div class="pmeta">${esc(p.machine||"—")} · ${esc(p.locality||"—")}</div>
+      <div class="pmeta">TPRM ${esc(currentTprm(p)||"—")} · ${p.stations.length} station(s)</div>
+      <div class="pfoot"><span>Downtime ${fmtDurWords(down)}</span><span class="del" data-del="${p.id}">Delete</span></div>
+    </div>`;
+  }).join("")+'</div>';
+  el.querySelectorAll(".pcard").forEach(c=>c.addEventListener("click",e=>{
+    if(e.target.dataset.del)return;
+    openProject(c.dataset.id);
+  }));
+  el.querySelectorAll("[data-del]").forEach(d=>d.addEventListener("click",e=>{
+    e.stopPropagation();const id=d.dataset.del;
+    if(confirm("Delete this project and its log?")){state.projects=state.projects.filter(p=>p.id!==id);save();renderProjects();}
+  }));
+}
+function openProject(id){
+  state.activeId=id;const p=activeProject();
+  // ensure stations have runtime fields
+  p.stations.forEach(st=>{if(st.open===undefined){st.open=false;st.state="production";}});
+  if(!p.analyses)p.analyses={};
+  try{localStorage.setItem(LS_ACTIVE,id);}catch(e){}
+  requestWake();
+  save();renderTrack();show("track");startTick();
+}
+
+/* ---------- SCREEN 2: setup ---------- */
+function openSetup(){
+  pendingPersonnel=[];
+  document.getElementById("setupTitle").textContent="New project";
+  ["f-name","f-locality","f-machine","f-equip","f-tprm","f-person","f-observer","f-taktp","f-taktm"].forEach(i=>document.getElementById(i).value="");
+  document.getElementById("f-nstations").value="1";
+  renderPersonList();renderStationNames();show("setup");
+}
+function renderPersonList(){
+  document.getElementById("personList").innerHTML=pendingPersonnel.map((n,i)=>
+    `<span class="pchip">${esc(n)}<span class="x" data-i="${i}">×</span></span>`).join("");
+  document.querySelectorAll("#personList .x").forEach(x=>x.addEventListener("click",()=>{
+    pendingPersonnel.splice(+x.dataset.i,1);renderPersonList();}));
+}
+function addPerson(){
+  const inp=document.getElementById("f-person");const v=inp.value.trim();
+  if(v){pendingPersonnel.push(v);inp.value="";renderPersonList();}inp.focus();
+}
+function renderStationNames(){
+  const n=Math.max(1,Math.min(20,+document.getElementById("f-nstations").value||1));
+  const box=document.getElementById("stationNames");
+  const existing=[...box.querySelectorAll(".snrow input[type=text]")].map(i=>i.value);
+  let html="";
+  for(let i=0;i<n;i++){
+    const nm=existing[i]||("Station "+(i+1));
+    html+=`<div class="snrow">
+      <input type="text" value="${esc(nm)}" data-si="${i}">
+      <label class="rlab"><input type="radio" name="prio" value="${i}" ${i===0?"checked":""}> priority / bottleneck</label>
+    </div>`;
+  }
+  box.innerHTML=html;
+}
+function startTracking(){
+  const name=document.getElementById("f-name").value.trim();
+  if(!name){toast("Give the project a name");return;}
+  const names=[...document.querySelectorAll("#stationNames input[type=text]")].map(i=>i.value.trim()||"Station");
+  const prioIdx=+(document.querySelector('input[name="prio"]:checked')||{value:0}).value;
+  const now=Date.now();
+  const p={
+    id:uid(),name,
+    locality:document.getElementById("f-locality").value.trim(),
+    machine:document.getElementById("f-machine").value.trim(),
+    equip:document.getElementById("f-equip").value.trim(),
+    observer:document.getElementById("f-observer").value.trim(),
+    taktPlanned:parseFloat(document.getElementById("f-taktp").value)||null,
+    taktMeasured:parseFloat(document.getElementById("f-taktm").value)||null,
+    lineType:document.getElementById("f-linetype").value,
+    personnel:[...pendingPersonnel],
+    tprmHistory:[{tprm:document.getElementById("f-tprm").value.trim(),at:now}],
+    reasons:JSON.parse(JSON.stringify(DEFAULT_REASONS)),
+    stations:names.map((nm,i)=>({id:uid(),name:nm,priority:i===prioIdx,
+      state:"production",open:true,openStart:now,category:"",color:"",note:""})),
+    segments:[],analyses:{},createdAt:now,updatedAt:now
+  };
+  state.projects.push(p);state.activeId=p.id;save();
+  try{localStorage.setItem(LS_ACTIVE,p.id);}catch(e){}
+  requestWake();
+  renderTrack();show("track");startTick();
+}
+
+/* ---------- SCREEN 3: tracking ---------- */
+let tickHandle=null;
+function startTick(){stopTick();tickHandle=setInterval(tick,1000);tick();}
+function stopTick(){if(tickHandle){clearInterval(tickHandle);tickHandle=null;}}
+function tick(){
+  const now=new Date();
+  document.getElementById("wallTime").textContent=now.toLocaleTimeString([], {hour12:false});
+  document.getElementById("wallDate").textContent=now.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"});
+  if(!document.getElementById("scr-track").classList.contains("active"))return;
+  const p=activeProject();if(!p)return;
+  const prio=p.stations.find(s=>s.priority)||p.stations[0];
+  const bar=document.getElementById("statusBar");
+  bar.className="statusbar "+(prio.state==="downtime"?"down":"prod");
+  document.getElementById("stPrioLbl").textContent="Bottleneck: "+prio.name;
+  document.getElementById("stState").textContent=prio.state==="downtime"?"DOWNTIME":"PRODUCTION";
+  document.getElementById("stElapsed").textContent=fmtDur(Date.now()-prio.openStart);
+  p.stations.forEach(st=>{
+    const t=document.querySelector(`.station[data-id="${st.id}"] .stimer`);
+    if(t)t.textContent=fmtDur(Date.now()-st.openStart);
+  });
+}
+function renderTrack(){
+  const p=activeProject();if(!p)return;
+  document.getElementById("trackMeta").innerHTML=
+    `<span><b>Line</b>${esc(p.machine||"—")}</span>`+
+    `<span><b>Loc</b>${esc(p.locality||"—")}</span>`+
+    `<span><b>Equip</b>${esc(p.equip||"—")}</span>`+
+    `<span><b>TPRM</b><span class="tprmpill">${esc(currentTprm(p)||"—")}</span></span>`+
+    (p.observer?`<span><b>Red circle by</b>${esc(p.observer)}</span>`:"")+
+    ((p.taktPlanned||p.taktMeasured)?`<span><b>Takt</b>${p.taktPlanned??"—"}s plan / ${p.taktMeasured??"—"}s meas</span>`:"")+
+    (p.personnel.length?`<span><b>Staff</b>${esc(p.personnel.join(", "))}</span>`:"");
+  const grid=document.getElementById("stationGrid");
+  grid.innerHTML=p.stations.map(st=>{
+    const down=st.state==="downtime";
+    return `<div class="station ${down?"down":"prod"}" data-id="${st.id}">
+      <div class="sname">${esc(st.name)} ${st.priority?'<span class="prio">BOTTLENECK</span>':""}</div>
+      <div class="sstate">${down?"● DOWNTIME":"● PRODUCTION"}</div>
+      <div class="stimer tnum">${fmtDur(Date.now()-st.openStart)}</div>
+      <div class="scat">${down?esc(st.category||"(no reason yet)"):""}</div>
+      <div class="hint">${down?"Tap to resume production":"Tap to log downtime"}</div>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll(".station").forEach(el=>el.addEventListener("click",()=>toggleStation(el.dataset.id)));
+}
+function toggleStation(sid){
+  const p=activeProject();const st=p.stations.find(s=>s.id===sid);if(!st)return;
+  if(st.state==="production"){openDownModal(st);}
+  else{closeOpenSegment(p,st);st.state="production";st.open=true;st.openStart=Date.now();st.category="";st.color="";st.note="";
+    p.updatedAt=Date.now();save();renderTrack();tick();toast(st.name+" → production");}
+}
+function closeOpenSegment(p,st){
+  const now=Date.now();
+  p.segments.push({id:uid(),stationId:st.id,type:st.state,category:st.category||"",color:st.color||"",
+    note:st.note||"",start:st.openStart,end:now,tprm:tprmAt(p,st.openStart)});
+}
+
+/* downtime modal */
+function openDownModal(st){
+  const p=activeProject();
+  downContext={stationId:st.id,color:null,reason:null};
+  document.getElementById("downStationName").textContent=st.name;
+  document.getElementById("downNote").value="";
+  document.getElementById("downSearch").value="";
+  renderDownList(p,"");
+  document.getElementById("confirmDownBtn").disabled=false; // allow empty reason (editable later)
+  document.getElementById("downOverlay").classList.add("open");
+  setTimeout(()=>{try{document.getElementById("downSearch").focus();}catch(e){}},60);
+}
+function renderDownList(p,filter){
+  const f=(filter||"").toLowerCase().trim();
+  const list=document.getElementById("downList");
+  const items=p.reasons.map((r,i)=>({r,i})).filter(({r})=>!f||reasonLabel(r).toLowerCase().includes(f));
+  list.innerHTML=items.length?items.map(({r,i})=>{
+    const main=r.code&&(+r.code%10===0);
+    return `<button class="ritem ${main?"main":""}" data-i="${i}">
+      <span class="cd" style="background:${r.color}"></span>
+      <span class="rc">${esc(r.code||"")}</span>
+      <span class="rn">${esc(r.name)}</span></button>`;
+  }).join(""):'<div class="nodata">No match.</div>';
+  list.querySelectorAll(".ritem").forEach(b=>b.addEventListener("click",()=>{
+    list.querySelectorAll(".ritem").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel");
+    const r=p.reasons[+b.dataset.i];downContext.reason=reasonLabel(r);downContext.color=r.color;
+  }));
+}
+function confirmDown(){
+  const p=activeProject();const st=p.stations.find(s=>s.id===downContext.stationId);if(!st)return;
+  closeOpenSegment(p,st); // close the production segment
+  st.state="downtime";st.open=true;st.openStart=Date.now();
+  st.category=downContext.reason||"";st.color=downContext.color||"";
+  st.note=document.getElementById("downNote").value.trim();
+  p.updatedAt=Date.now();save();
+  document.getElementById("downOverlay").classList.remove("open");
+  renderTrack();tick();toast(st.name+" → downtime");
+}
+
+/* ---------- reasons manager ---------- */
+function openReasons(){
+  const p=activeProject();const box=document.getElementById("reasonRows");
+  box.innerHTML=p.reasons.map((r,i)=>
+    `<div class="rrow"><input type="color" value="${r.color}" data-c="${i}">
+     <input type="text" class="rcode" value="${esc(r.code||"")}" placeholder="code" style="width:56px;flex:none" data-code="${i}">
+     <input type="text" class="rname" value="${esc(r.name)}" data-n="${i}">
+     <button class="rdel" data-d="${i}">✕</button></div>`).join("");
+  box.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{
+    p.reasons.splice(+b.dataset.d,1);save();openReasons();}));
+  document.getElementById("reasonOverlay").classList.add("open");
+}
+function saveReasons(){
+  const p=activeProject();const box=document.getElementById("reasonRows");
+  const rows=[...box.querySelectorAll(".rrow")];
+  p.reasons=rows.map(r=>({code:r.querySelector(".rcode").value.trim(),name:r.querySelector(".rname").value.trim()||"Reason",color:r.querySelector('input[type=color]').value}));
+  save();document.getElementById("reasonOverlay").classList.remove("open");renderTrack();
+}
+
+/* ---------- TPRM change ---------- */
+function confirmTprm(){
+  const p=activeProject();const v=document.getElementById("newTprmInput").value.trim();
+  if(!v){toast("Enter a TPRM");return;}
+  p.tprmHistory.push({tprm:v,at:Date.now()});p.updatedAt=Date.now();save();
+  document.getElementById("tprmOverlay").classList.remove("open");
+  document.getElementById("newTprmInput").value="";
+  renderTrack();toast("TPRM → "+v);
+}
+
+/* ---------- EDIT PROJECT ---------- */
+let editPersonnel=[];let editStationCounter=0;
+function openEdit(){
+  const p=activeProject();if(!p)return;
+  document.getElementById("e-name").value=p.name||"";
+  document.getElementById("e-locality").value=p.locality||"";
+  document.getElementById("e-machine").value=p.machine||"";
+  document.getElementById("e-equip").value=p.equip||"";
+  document.getElementById("e-observer").value=p.observer||"";
+  document.getElementById("e-taktp").value=p.taktPlanned??"";
+  document.getElementById("e-taktm").value=p.taktMeasured??"";
+  document.getElementById("e-linetype").value=p.lineType||"connected";
+  document.getElementById("e-person").value="";
+  editPersonnel=[...p.personnel];renderEditPersons();
+  renderEditStations(p);
+  show("edit");
+}
+function renderEditPersons(){
+  document.getElementById("ePersonList").innerHTML=editPersonnel.map((n,i)=>
+    `<span class="pchip">${esc(n)}<span class="x" data-i="${i}">×</span></span>`).join("");
+  document.querySelectorAll("#ePersonList .x").forEach(x=>x.addEventListener("click",()=>{
+    editPersonnel.splice(+x.dataset.i,1);renderEditPersons();}));
+}
+function eAddPerson(){const inp=document.getElementById("e-person");const v=inp.value.trim();
+  if(v){editPersonnel.push(v);inp.value="";renderEditPersons();}inp.focus();}
+function editStationRow(key,name,prio){
+  return `<div class="snrow" data-key="${key}">
+    <input type="text" value="${esc(name)}">
+    <label class="rlab"><input type="radio" name="eprio" ${prio?"checked":""}> priority / bottleneck</label>
+    <button class="rdel" data-rm="1">✕</button></div>`;
+}
+function renderEditStations(p){
+  const box=document.getElementById("editStations");
+  box.innerHTML=p.stations.map(st=>editStationRow(st.id,st.name,st.priority)).join("");
+  bindEditStationRows();
+}
+function bindEditStationRows(){
+  const box=document.getElementById("editStations");
+  box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{
+    const rows=box.querySelectorAll(".snrow");
+    if(rows.length<=1){toast("Keep at least one station");return;}
+    const wasChecked=b.closest(".snrow").querySelector('input[type=radio]').checked;
+    b.closest(".snrow").remove();
+    if(wasChecked){const r=box.querySelector('input[type=radio]');if(r)r.checked=true;}
+  });
+}
+function eAddStation(){
+  const box=document.getElementById("editStations");
+  box.insertAdjacentHTML("beforeend",editStationRow("new-"+(editStationCounter++),"Station "+(box.querySelectorAll(".snrow").length+1),false));
+  bindEditStationRows();
+}
+function saveEdit(){
+  const p=activeProject();if(!p)return;
+  const name=document.getElementById("e-name").value.trim();
+  if(!name){toast("Give the project a name");return;}
+  const box=document.getElementById("editStations");
+  const rows=[...box.querySelectorAll(".snrow")];
+  const existing={};p.stations.forEach(s=>existing[s.id]=s);
+  const now=Date.now();const kept=[];
+  rows.forEach(row=>{
+    const key=row.dataset.key;const nm=row.querySelector('input[type=text]').value.trim()||"Station";
+    if(existing[key]){existing[key].name=nm;kept.push(existing[key]);}
+    else kept.push({id:uid(),name:nm,priority:false,state:"production",open:true,openStart:now,category:"",color:"",note:""});
+  });
+  const keptIds=new Set(kept.map(s=>s.id));
+  const removed=p.stations.filter(s=>!keptIds.has(s.id));
+  if(removed.length&&!confirm("Remove "+removed.length+" station(s) and their log entries?"))return;
+  p.segments=p.segments.filter(seg=>keptIds.has(seg.stationId));
+  const checkedIdx=rows.findIndex(r=>r.querySelector('input[type=radio]').checked);
+  kept.forEach(s=>s.priority=false);(kept[checkedIdx]||kept[0]).priority=true;
+  p.stations=kept;
+  p.name=name;
+  p.locality=document.getElementById("e-locality").value.trim();
+  p.machine=document.getElementById("e-machine").value.trim();
+  p.equip=document.getElementById("e-equip").value.trim();
+  p.observer=document.getElementById("e-observer").value.trim();
+  p.taktPlanned=parseFloat(document.getElementById("e-taktp").value)||null;
+  p.taktMeasured=parseFloat(document.getElementById("e-taktm").value)||null;
+  p.lineType=document.getElementById("e-linetype").value;
+  p.personnel=[...editPersonnel];
+  p.updatedAt=now;save();renderTrack();show("track");tick();toast("Project updated");
+}
+
+/* ---------- SCREEN 4: log / report ---------- */
+function renderLog(){
+  const p=activeProject();if(!p)return;
+  document.getElementById("logTitle").textContent=p.name;
+  document.getElementById("logSub").textContent=(p.machine||"—")+" · "+(p.locality||"—")+" · Equip "+(p.equip||"—");
+  const segs=allSegments(p);
+  const prod=segs.filter(s=>s.type==="production").reduce((a,s)=>a+(s.end-s.start),0);
+  const down=segs.filter(s=>s.type==="downtime").reduce((a,s)=>a+(s.end-s.start),0);
+  const total=prod+down;const avail=total?(prod/total*100):0;
+  const events=segs.filter(s=>s.type==="downtime").length;
+  const lp=computeLinePerf(p);
+  document.getElementById("summaryCards").innerHTML=
+    `<div class="stat hl"><div class="k">${esc(lp.label)}</div><div class="v g tnum">${(lp.value*100).toFixed(1)}%</div></div>
+     <div class="stat"><div class="k">Production (all stations)</div><div class="v g tnum">${fmtDur(prod)}</div></div>
+     <div class="stat"><div class="k">Downtime (all stations)</div><div class="v r tnum">${fmtDur(down)}</div></div>
+     <div class="stat"><div class="k">Avg availability (blended)</div><div class="v tnum">${avail.toFixed(1)}%</div></div>
+     <div class="stat"><div class="k">Downtime events</div><div class="v tnum">${events}</div></div>`;
+  document.getElementById("linePerfNote").textContent=lp.detail;
+  // pareto
+  const byCat={};segs.filter(s=>s.type==="downtime").forEach(s=>{
+    const k=s.category||"(no reason)";byCat[k]=byCat[k]||{ms:0,color:s.color||"#9AA0A6"};byCat[k].ms+=(s.end-s.start);});
+  const cats=Object.entries(byCat).sort((a,b)=>b[1].ms-a[1].ms);
+  const max=cats.length?cats[0][1].ms:1;
+  document.getElementById("pareto").innerHTML=cats.length?cats.map(([k,v])=>
+    `<div class="pbar"><span class="plab">${esc(k)}</span>
+     <span class="ptrack"><span class="pfill" style="width:${(v.ms/max*100).toFixed(1)}%;background:${v.color}"></span></span>
+     <span class="pval tnum">${fmtDurWords(v.ms)}</span></div>`).join(""):'<span style="color:var(--muted)">No downtime yet.</span>';
+  // table
+  renderLogTable(p);
+}
+function renderLogTable(p){
+  const segs=allSegments(p);
+  const reasonOpts=p.reasons.map(r=>reasonLabel(r));
+  const body=document.getElementById("logBody");
+  body.innerHTML=segs.map((s)=>{
+    const isDown=s.type==="downtime";
+    let reasonCell;
+    if(isDown){
+      const opts=['<option value="">(no reason)</option>']
+        .concat(reasonOpts.map(r=>`<option ${r===s.category?"selected":""}>${esc(r)}</option>`)).join("");
+      reasonCell=`<select data-seg="${s.id}" data-live="${s.live?1:0}" data-field="cat">${opts}</select>`;
+    }else reasonCell="—";
+    return `<tr class="${isDown?"down":""}">
+      <td>${esc(stationName(p,s.stationId))}</td>
+      <td><span class="badge ${isDown?"tag-down":"tag-prod"}">${isDown?"DOWNTIME":"PRODUCTION"}</span></td>
+      <td>${reasonCell}</td>
+      <td>${esc(s.tprm||"—")}</td>
+      <td class="tnum">${fmtTime(s.start)}</td>
+      <td class="tnum">${s.live?'<span class="inprog">in progress</span>':fmtTime(s.end)}</td>
+      <td class="tnum">${fmtDur(s.end-s.start)}</td>
+      <td><input value="${esc(s.note||"")}" data-seg="${s.id}" data-live="${s.live?1:0}" data-field="note" placeholder="—"></td>
+    </tr>`;
+  }).join("");
+  body.querySelectorAll("select[data-field=cat]").forEach(sel=>sel.addEventListener("change",()=>editSeg(sel)));
+  body.querySelectorAll("input[data-field=note]").forEach(inp=>inp.addEventListener("change",()=>editSeg(inp)));
+}
+function editSeg(elm){
+  const p=activeProject();const id=elm.dataset.seg;const live=elm.dataset.live==="1";const field=elm.dataset.field;
+  const val=elm.value;
+  if(live){
+    const st=p.stations.find(x=>x.id===id);
+    if(st){if(field==="cat"){st.category=val;const r=p.reasons.find(r=>reasonLabel(r)===val);st.color=r?r.color:"";}
+      else st.note=val;}
+  }else{
+    const seg=p.segments.find(s=>s.id===id);
+    if(seg){if(field==="cat"){seg.category=val;const r=p.reasons.find(r=>reasonLabel(r)===val);seg.color=r?r.color:"";}
+      else seg.note=val;}
+  }
+  p.updatedAt=Date.now();save();renderLog();
+}
+/* ---------- RCA: 5-WHY + ACTIONS ---------- */
+let rcaContext={key:null,stationId:null,reason:null,color:null};
+function ensureAnalyses(p){if(!p.analyses)p.analyses={};}
+function analysisKey(stationId,reason){return stationId+"||"+reason;}
+function getAnalysis(p,stationId,reason){
+  ensureAnalyses(p);const k=analysisKey(stationId,reason);
+  if(!p.analyses[k])p.analyses[k]={actions:[],why:seedWhy(reason)};
+  return p.analyses[k];
+}
+function seedWhy(problem){
+  let root={id:uid(),text:problem||"",children:[]};let cur=root;
+  for(let i=0;i<5;i++){const n={id:uid(),text:"",children:[]};cur.children.push(n);cur=n;}
+  return root;
+}
+function findNode(node,id){if(node.id===id)return node;for(const c of node.children){const r=findNode(c,id);if(r)return r;}return null;}
+function findParent(node,id,parent){if(node.id===id)return parent;for(const c of node.children){const r=findParent(c,id,node);if(r)return r;}return null;}
+function openRCA(stationId,reason,color){
+  const p=activeProject();if(!p||!reason)return;
+  const a=getAnalysis(p,stationId,reason);
+  rcaContext={key:analysisKey(stationId,reason),stationId,reason,color:color||"#999"};
+  document.getElementById("rcaSwatch").style.background=color||"#999";
+  document.getElementById("rcaTitle").textContent=reason;
+  document.getElementById("rcaSub").textContent="Station: "+stationName(p,stationId);
+  renderWhyTree();renderActionList();
+  document.getElementById("rcaOverlay").classList.add("open");
+}
+function currentAnalysis(){const p=activeProject();return p.analyses[rcaContext.key];}
+function renderWhyTree(){
+  const a=currentAnalysis();
+  document.getElementById("whyTree").innerHTML=renderWhyNode(a.why,0);
+  bindWhy();
+}
+function renderWhyNode(node,depth){
+  const lab=depth===0?"Problem":"Why?";
+  const kids=node.children.map(c=>renderWhyNode(c,depth+1)).join("");
+  return `<div class="whynode ${depth>0?"whyconn":""}">
+    <div class="whyrow">
+      <span class="whylab">${lab}</span>
+      <input class="whytext" value="${esc(node.text)}" data-id="${node.id}" placeholder="${depth===0?"Problem statement":"Answer / cause"}">
+      <button class="whybtn" data-addwhy="${node.id}">+Why</button>
+      ${depth>0?`<button class="whybtn" data-addcause="${node.id}">+Cause</button>`:""}
+      ${depth>0?`<button class="whybtn del" data-delwhy="${node.id}">✕</button>`:""}
+    </div>${kids}</div>`;
+}
+function bindWhy(){
+  const a=currentAnalysis();const p=activeProject();
+  document.querySelectorAll("#whyTree .whytext").forEach(inp=>inp.addEventListener("change",()=>{
+    const n=findNode(a.why,inp.dataset.id);if(n){n.text=inp.value;p.updatedAt=Date.now();save();}}));
+  document.querySelectorAll("#whyTree [data-addwhy]").forEach(b=>b.onclick=()=>{
+    const n=findNode(a.why,b.dataset.addwhy);n.children.push({id:uid(),text:"",children:[]});save();renderWhyTree();});
+  document.querySelectorAll("#whyTree [data-addcause]").forEach(b=>b.onclick=()=>{
+    const par=findParent(a.why,b.dataset.addcause,null)||a.why;par.children.push({id:uid(),text:"",children:[]});save();renderWhyTree();});
+  document.querySelectorAll("#whyTree [data-delwhy]").forEach(b=>b.onclick=()=>{
+    const par=findParent(a.why,b.dataset.delwhy,null);if(par){par.children=par.children.filter(c=>c.id!==b.dataset.delwhy);save();renderWhyTree();}});
+}
+function renderActionList(){
+  const a=currentAnalysis();const box=document.getElementById("actionList");
+  if(!a.actions.length){box.innerHTML='<div class="nodata">No actions yet.</div>';return;}
+  box.innerHTML=a.actions.map(ac=>`<div class="actcard" data-id="${ac.id}">
+    <div class="actgrid">
+      <div><label>Area</label><input data-f="area" value="${esc(ac.area||"")}" placeholder="e.g. Maintenance"></div>
+      <div><label>Responsible</label><input data-f="responsible" value="${esc(ac.responsible||"")}" placeholder="Name"></div>
+    </div>
+    <div class="field" style="margin-bottom:.5rem"><label>Action</label><textarea data-f="action" rows="2" placeholder="What will be done">${esc(ac.action||"")}</textarea></div>
+    <div class="actgrid">
+      <div><label>Deadline</label><input type="date" data-f="deadline" value="${esc(ac.deadline||"")}"></div>
+      <div><label>Status</label><select data-f="status">
+        <option ${ac.status==="Open"?"selected":""}>Open</option>
+        <option value="In progress" ${ac.status==="In progress"?"selected":""}>In progress</option>
+        <option ${ac.status==="Done"?"selected":""}>Done</option></select></div>
+    </div>
+    <div class="actfoot"><span></span><button class="actdel" data-del="${ac.id}">Remove</button></div>
+  </div>`).join("");
+  box.querySelectorAll(".actcard").forEach(card=>{
+    const id=card.dataset.id;
+    card.querySelectorAll("[data-f]").forEach(el=>el.addEventListener("change",()=>{
+      const a2=currentAnalysis();const ac=a2.actions.find(x=>x.id===id);
+      if(ac){ac[el.dataset.f]=el.value;activeProject().updatedAt=Date.now();save();}}));
+    card.querySelector("[data-del]").onclick=()=>{
+      const a2=currentAnalysis();a2.actions=a2.actions.filter(x=>x.id!==id);save();renderActionList();};
+  });
+}
+function addAction(){
+  const a=currentAnalysis();
+  a.actions.push({id:uid(),area:"",action:"",responsible:"",deadline:"",status:"Open",createdAt:Date.now()});
+  activeProject().updatedAt=Date.now();save();renderActionList();
+}
+function whyRootCauses(node,acc){ // deepest non-empty answers
+  if(!node.children.length){if(node.text&&node!==undefined)acc.push(node.text);return acc;}
+  node.children.forEach(c=>whyRootCauses(c,acc));return acc;
+}
+function stationAnalyses(p,st){
+  ensureAnalyses(p);const out=[];
+  Object.entries(p.analyses).forEach(([k,a])=>{if(k.startsWith(st.id+"||")){out.push({reason:k.split("||")[1],a});}});
+  return out;
+}
+
+/* ---------- CHARTS REPORT ---------- */
+let chartInstances=[];
+function destroyCharts(){chartInstances.forEach(c=>{try{c.destroy();}catch(e){}});chartInstances=[];}
+function themeColors(){
+  const cs=getComputedStyle(document.documentElement);
+  return {text:cs.getPropertyValue('--text').trim(),muted:cs.getPropertyValue('--muted').trim(),
+    grid:cs.getPropertyValue('--border').trim(),green:cs.getPropertyValue('--green').trim()};
+}
+function reasonColorMap(p){const m={};p.reasons.forEach(r=>m[r.name]=r.color);return m;}
+function stationSegs(p,st){return allSegments(p).filter(s=>s.stationId===st.id);}
+function stationAvail(p,st){
+  const segs=stationSegs(p,st);
+  const prod=segs.filter(s=>s.type==="production").reduce((a,s)=>a+(s.end-s.start),0);
+  const down=segs.filter(s=>s.type==="downtime").reduce((a,s)=>a+(s.end-s.start),0);
+  return {prod,down,avail:(prod+down)?prod/(prod+down):0,has:(prod+down)>0};
+}
+function computeLinePerf(p){
+  const stats=p.stations.map(st=>({st,...stationAvail(p,st)}));
+  const active=stats.filter(s=>s.has);
+  const type=p.lineType||"connected";
+  if(type==="independent"){
+    const av=active.length?active.reduce((a,s)=>a+s.avail,0)/active.length:0;
+    return {type,label:"Fleet availability (avg of "+active.length+" machine"+(active.length===1?"":"s")+")",
+      value:av,detail:"Simple average of per-machine availability — machines run independently."};
+  }
+  const bn=stats.find(s=>s.st.priority)||stats[0];
+  const nbDown=stats.filter(s=>s!==bn).reduce((a,s)=>a+s.down,0);
+  return {type,label:"Line availability (bottleneck: "+(bn?bn.st.name:"—")+")",
+    value:bn&&bn.has?bn.avail:0,
+    detail:"Governed by the bottleneck. Non-bottleneck downtime "+fmtDurWords(nbDown)+" is buffer-dependent and may not have stopped the line."};
+}
+function renderReport(){
+  const p=activeProject();if(!p)return;destroyCharts();
+  document.getElementById("reportTitle").textContent=p.name+" — charts";
+  const lp=computeLinePerf(p);
+  document.getElementById("reportSub").textContent=(p.machine||"—")+" · "+(p.locality||"—")+
+    (p.observer?" · Red circle by "+p.observer:"")+" · "+lp.label+" "+(lp.value*100).toFixed(1)+"%";
+  const tc=themeColors();const rmap=reasonColorMap(p);
+  let html="";
+  p.stations.forEach((st,idx)=>{
+    const segs=stationSegs(p,st);
+    const prod=segs.filter(s=>s.type==="production").reduce((a,s)=>a+(s.end-s.start),0);
+    const down=segs.filter(s=>s.type==="downtime").reduce((a,s)=>a+(s.end-s.start),0);
+    const avail=(prod+down)?(prod/(prod+down)*100):0;
+    html+=`<div class="stationreport">
+      <h3>${esc(st.name)} ${st.priority?'<span class="prio">BOTTLENECK</span>':""}</h3>
+      <div class="srmeta">Production ${fmtDurWords(prod)} · Downtime ${fmtDurWords(down)} · Availability ${avail.toFixed(1)}%</div>
+      <div class="chartlabel">Production timeline</div>
+      <div class="tl" id="tl-${idx}"></div>
+      <div class="charts2">
+        <div><div class="chartlabel">Downtime split</div><div class="chartbox"><canvas id="pie-${idx}"></canvas></div></div>
+        <div><div class="chartlabel">Pareto of downtime</div><div class="chartbox"><canvas id="par-${idx}"></canvas></div></div>
+      </div>
+      <div class="chartlabel" style="margin-top:.8rem">Root cause &amp; actions — click a reason</div>
+      <div class="rxlist" id="rx-${idx}"></div>
+      <div class="actsummary" id="as-${idx}"></div></div>`;
+  });
+  document.getElementById("reportBody").innerHTML=html;
+  p.stations.forEach((st,idx)=>{
+    const segs=stationSegs(p,st);
+    renderTimeline(document.getElementById("tl-"+idx),segs,st);
+    const byCat={};segs.filter(s=>s.type==="downtime").forEach(s=>{const k=s.category||"(no reason)";
+      if(!byCat[k])byCat[k]={ms:0,color:s.color||rmap[k]||"#9AA0A6"};byCat[k].ms+=(s.end-s.start);});
+    const entries=Object.entries(byCat).sort((a,b)=>b[1].ms-a[1].ms);
+    renderPie(document.getElementById("pie-"+idx),entries,tc,st.id);
+    renderPareto(document.getElementById("par-"+idx),entries,tc,st.id);
+    renderReasonChips(document.getElementById("rx-"+idx),entries,st.id,p);
+    renderActionsSummary(document.getElementById("as-"+idx),st,p);
+  });
+}
+function renderReasonChips(el,entries,stationId,p){
+  if(!entries.length){el.innerHTML='<span class="rc-hint">No downtime to analyse.</span>';return;}
+  el.innerHTML=entries.map(([reason,v])=>{
+    const a=p.analyses&&p.analyses[analysisKey(stationId,reason)];
+    const na=a?a.actions.length:0;
+    return `<span class="rxchip" data-reason="${esc(reason)}" data-color="${v.color}">
+      <span class="cd" style="background:${v.color}"></span>${esc(reason)}
+      <span class="cnt">${fmtDurWords(v.ms)}</span>${na?`<span class="abadge">${na}</span>`:""}</span>`;
+  }).join("");
+  el.querySelectorAll(".rxchip").forEach(c=>c.onclick=()=>openRCA(stationId,c.dataset.reason,c.dataset.color));
+}
+function renderActionsSummary(el,st,p){
+  const list=stationAnalyses(p,st).filter(x=>x.a.actions.length);
+  if(!list.length){el.innerHTML="";return;}
+  let rows="";
+  list.forEach(({reason,a})=>{
+    a.actions.forEach(ac=>{
+      const cls=ac.status==="Done"?"st-done":ac.status==="In progress"?"st-prog":"st-open";
+      rows+=`<div class="actline"><b>${esc(reason)}</b> — ${esc(ac.action||"(no text)")} · ${esc(ac.area||"—")} · ${esc(ac.responsible||"—")} · ${esc(ac.deadline||"—")} <span class="statuspill ${cls}">${esc(ac.status||"Open")}</span></div>`;
+    });
+  });
+  el.innerHTML='<div class="chartlabel">Actions</div>'+rows;
+}
+function renderTimeline(el,segs,st){
+  if(!segs.length){el.innerHTML='<div class="nodata">No activity yet.</div>';return;}
+  const start=segs[0].start,end=segs[segs.length-1].end,span=Math.max(1,end-start);
+  const green=themeColors().green;
+  const bars=segs.map(s=>{
+    const w=(s.end-s.start)/span*100;const col=s.type==="production"?green:(s.color||"#9AA0A6");
+    const tip=(s.type==="production"?"Production":(s.category||"Downtime"))+" · "+fmtDurWords(s.end-s.start)+" · "+fmtTime(s.start)+"–"+(s.live?"now":fmtTime(s.end));
+    const cat=s.type==="downtime"?` data-reason="${esc(s.category||"(no reason)")}" data-color="${col}"`:"";
+    return `<div class="tlseg" style="width:${w}%;background:${col}" title="${esc(tip)}"${cat}></div>`;
+  }).join("");
+  const reasons={};segs.forEach(s=>{if(s.type==="downtime")reasons[s.category||"(no reason)"]=s.color||"#9AA0A6";});
+  const leg=`<span><i style="background:${green}"></i>Production</span>`+
+    Object.entries(reasons).map(([k,c])=>`<span><i style="background:${c}"></i>${esc(k)}</span>`).join("");
+  el.innerHTML=`<div class="tlbar">${bars}</div>
+    <div class="tlaxis"><span>${fmtTime(start)}</span><span>${segs[segs.length-1].live?"now":fmtTime(end)}</span></div>
+    <div class="tlleg">${leg}</div>`;
+  if(st)el.querySelectorAll(".tlseg[data-reason]").forEach(seg=>seg.addEventListener("click",()=>openRCA(st.id,seg.dataset.reason,seg.dataset.color)));
+}
+function renderPie(canvas,entries,tc,stationId){
+  if(typeof Chart==="undefined"){canvas.parentElement.innerHTML='<div class="nodata">Charts library offline.</div>';return;}
+  if(!entries.length){canvas.parentElement.innerHTML='<div class="nodata">No downtime.</div>';return;}
+  chartInstances.push(new Chart(canvas,{type:"doughnut",data:{
+    labels:entries.map(e=>e[0]),
+    datasets:[{data:entries.map(e=>Math.round(e[1].ms/1000)),backgroundColor:entries.map(e=>e[1].color),borderWidth:1,borderColor:tc.grid}]
+  },options:{responsive:true,maintainAspectRatio:false,animation:false,
+    onClick:(e,els)=>{if(els.length){const i=els[0].index;openRCA(stationId,entries[i][0],entries[i][1].color);}},
+    plugins:{legend:{position:"bottom",labels:{color:tc.text,boxWidth:12,font:{size:11}}},
+      tooltip:{callbacks:{label:ctx=>ctx.label+": "+fmtDurWords(ctx.parsed*1000)}}}}}));
+}
+function renderPareto(canvas,entries,tc,stationId){
+  if(typeof Chart==="undefined"){canvas.parentElement.innerHTML='<div class="nodata">Charts library offline.</div>';return;}
+  if(!entries.length){canvas.parentElement.innerHTML='<div class="nodata">No downtime.</div>';return;}
+  const secs=entries.map(e=>Math.round(e[1].ms/1000));
+  const total=secs.reduce((a,b)=>a+b,0)||1;let cum=0;const cumPct=secs.map(s=>{cum+=s;return +(cum/total*100).toFixed(1);});
+  chartInstances.push(new Chart(canvas,{data:{labels:entries.map(e=>e[0]),datasets:[
+    {type:"bar",label:"Downtime (s)",data:secs,backgroundColor:entries.map(e=>e[1].color),yAxisID:"y",order:2},
+    {type:"line",label:"Cumulative %",data:cumPct,borderColor:tc.text,backgroundColor:tc.text,yAxisID:"y1",tension:.2,order:1,pointRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
+    onClick:(e,els)=>{const bar=els.find(x=>x.datasetIndex===0);if(bar){openRCA(stationId,entries[bar.index][0],entries[bar.index][1].color);}},
+    plugins:{legend:{labels:{color:tc.text,boxWidth:12,font:{size:11}}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.type==="line"?ctx.parsed.y+"%":fmtDurWords(ctx.parsed.y*1000)}}},
+    scales:{x:{ticks:{color:tc.muted,font:{size:10}},grid:{display:false}},
+      y:{position:"left",beginAtZero:true,ticks:{color:tc.muted,font:{size:10}},grid:{color:tc.grid}},
+      y1:{position:"right",min:0,max:100,ticks:{color:tc.muted,font:{size:10},callback:v=>v+"%"},grid:{drawOnChartArea:false}}}}}));
+}
+function hexToRgb(h){h=(h||"#999").replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');
+  const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function downloadReportPDF(){
+  const p=activeProject();
+  if(!(window.jspdf&&window.jspdf.jsPDF)){toast("PDF library offline");return;}
+  const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:"mm",format:"a4"});
+  const pw=210,ph=297,m=14;let y=16;
+  doc.setFontSize(16);doc.setTextColor(0,137,61);doc.text("RedCirclePRO — Charts report",m,y);y+=7;
+  doc.setFontSize(9);doc.setTextColor(60);
+  doc.text(p.name+"  ·  "+(p.machine||"-")+"  ·  "+(p.locality||"-"),m,y);y+=4;
+  doc.text("Red circle by: "+(p.observer||"-")+"   Takt plan/meas: "+(p.taktPlanned??"-")+"/"+(p.taktMeasured??"-")+"s   "+new Date().toLocaleString(),m,y);y+=5;
+  const lpP=computeLinePerf(p);
+  doc.setTextColor(0,110,50);doc.text(lpP.label+": "+(lpP.value*100).toFixed(1)+"%   ("+(p.lineType||"connected")+")",m,y);doc.setTextColor(60);y+=6;
+  p.stations.forEach((st,idx)=>{
+    const segs=stationSegs(p,st);
+    const prod=segs.filter(s=>s.type==="production").reduce((a,s)=>a+(s.end-s.start),0);
+    const down=segs.filter(s=>s.type==="downtime").reduce((a,s)=>a+(s.end-s.start),0);
+    const avail=(prod+down)?(prod/(prod+down)*100):0;
+    if(y>ph-75){doc.addPage();y=16;}
+    doc.setFontSize(12);doc.setTextColor(20);doc.text(st.name+(st.priority?" (bottleneck)":""),m,y);y+=5;
+    doc.setFontSize(8);doc.setTextColor(90);
+    doc.text("Production "+fmtDurWords(prod)+"   Downtime "+fmtDurWords(down)+"   Availability "+avail.toFixed(1)+"%",m,y);y+=4;
+    if(segs.length){
+      const start=segs[0].start,end=segs[segs.length-1].end,span=Math.max(1,end-start);
+      const tlw=pw-2*m;let x=m;const hgt=6;
+      segs.forEach(s=>{const w=(s.end-s.start)/span*tlw;const col=hexToRgb(s.type==="production"?"#00893D":(s.color||"#9AA0A6"));
+        doc.setFillColor(col[0],col[1],col[2]);doc.rect(x,y,Math.max(0.3,w),hgt,"F");x+=w;});
+      doc.setDrawColor(180);doc.rect(m,y,tlw,hgt);y+=hgt+4;
+    }
+    const pie=document.getElementById("pie-"+idx),par=document.getElementById("par-"+idx);
+    const cw=(pw-2*m-6)/2;let rowH=0;
+    try{if(pie&&pie.toDataURL){const hh=cw*(pie.height/pie.width);doc.addImage(pie.toDataURL("image/png",1),"PNG",m,y,cw,hh);rowH=Math.max(rowH,hh);}}catch(e){}
+    try{if(par&&par.toDataURL){const hh=cw*(par.height/par.width);doc.addImage(par.toDataURL("image/png",1),"PNG",m+cw+6,y,cw,hh);rowH=Math.max(rowH,hh);}}catch(e){}
+    y+=rowH+8;
+  });
+  // ----- actions + 5why appendix -----
+  ensureAnalyses(p);
+  const actRows=[];
+  Object.entries(p.analyses).forEach(([k,a])=>{const[sid,reason]=k.split("||");
+    (a.actions||[]).forEach(ac=>actRows.push([stationName(p,sid),reason,ac.area||"",ac.action||"",ac.responsible||"",ac.deadline||"",ac.status||""]));});
+  if(actRows.length&&doc.autoTable){
+    doc.addPage();doc.setFontSize(14);doc.setTextColor(0,137,61);doc.text("Corrective actions",m,16);
+    doc.autoTable({startY:22,head:[["Station","Reason","Area","Action","Responsible","Deadline","Status"]],
+      body:actRows,styles:{fontSize:8,cellPadding:1.5,overflow:"linebreak"},headStyles:{fillColor:[0,137,61]},
+      columnStyles:{3:{cellWidth:55}}});
+  }
+  // 5why
+  const whyBlocks=[];
+  Object.entries(p.analyses).forEach(([k,a])=>{const[sid,reason]=k.split("||");
+    const lines=whyLines(a.why,0,[]);
+    if(lines.some(l=>l.depth>0&&!l.text.endsWith(": —")))whyBlocks.push({title:stationName(p,sid)+" — "+reason,lines});});
+  if(whyBlocks.length){
+    doc.addPage();let yy=16;doc.setFontSize(14);doc.setTextColor(0,137,61);doc.text("5 Why analyses",m,yy);yy+=8;
+    doc.setFontSize(9);
+    whyBlocks.forEach(b=>{
+      if(yy>270){doc.addPage();yy=16;}
+      doc.setTextColor(20);doc.setFont("helvetica","bold");doc.text(b.title,m,yy);doc.setFont("helvetica","normal");yy+=5;
+      doc.setTextColor(70);
+      b.lines.forEach(l=>{
+        const txt=splitClip(doc,l.text,180-l.depth*4);
+        txt.forEach(t=>{if(yy>285){doc.addPage();yy=16;}doc.text(t,m+l.depth*4,yy);yy+=4.5;});
+      });
+      yy+=3;
+    });
+  }
+  doc.save(safeName(p.name)+"_charts_"+dstamp()+".pdf");
+  toast("Report PDF downloaded");
+}
+function whyLines(node,depth,out){out.push({depth,text:(depth===0?"Problem: ":"Why: ")+(node.text||"—")});node.children.forEach(c=>whyLines(c,depth+1,out));return out;}
+function splitClip(doc,text,w){try{return doc.splitTextToSize(text,w);}catch(e){return[text];}}
+
+/* ---------- wake lock + resume ---------- */
+const LS_ACTIVE="redcirclepro_active";
+let wakeLock=null;
+async function requestWake(){try{if("wakeLock" in navigator)wakeLock=await navigator.wakeLock.request("screen");}catch(e){}}
+function releaseWake(){try{if(wakeLock){wakeLock.release();wakeLock=null;}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"){
+    if(document.getElementById("scr-track").classList.contains("active"))requestWake();
+    tick();
+  }
+});
+
+/* ---------- CSV ---------- */
+function buildCSV(p){
+  const segs=allSegments(p);
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  let L=[];
+  L.push("# RedCirclePRO export");
+  L.push("# Project,"+q(p.name));
+  L.push("# Locality,"+q(p.locality));
+  L.push("# Machine,"+q(p.machine));
+  L.push("# Equipment,"+q(p.equip));
+  L.push("# Observer,"+q(p.observer||""));
+  L.push("# TaktPlanned,"+q(p.taktPlanned??""));
+  L.push("# TaktMeasured,"+q(p.taktMeasured??""));
+  L.push("# Personnel,"+q(p.personnel.join("; ")));
+  L.push("# Stations,"+q(p.stations.map(s=>s.name+(s.priority?" (priority)":"")).join("; ")));
+  L.push("# ExportedAt,"+q(new Date().toISOString()));
+  L.push("");
+  L.push(["Station","Type","Reason","Color","TPRM","Start","End","DurationSec","Note"].join(","));
+  segs.forEach(s=>{
+    L.push([q(stationName(p,s.stationId)),q(s.type),q(s.category||""),q(s.color||""),q(s.tprm||""),
+      q(new Date(s.start).toISOString()),q(s.live?"":new Date(s.end).toISOString()),
+      Math.round((s.end-s.start)/1000),q(s.note||"")].join(","));
+  });
+  // actions appendix
+  ensureAnalyses(p);
+  const actRows=[];
+  Object.entries(p.analyses).forEach(([k,a])=>{const[sid,reason]=k.split("||");
+    (a.actions||[]).forEach(ac=>actRows.push([q(stationName(p,sid)),q(reason),q(ac.area||""),q(ac.action||""),q(ac.responsible||""),q(ac.deadline||""),q(ac.status||"")].join(",")));});
+  if(actRows.length){L.push("");L.push("# ACTIONS");
+    L.push(["Station","Reason","Area","Action","Responsible","Deadline","Status"].join(","));actRows.forEach(r=>L.push(r));}
+  return L.join("\n");
+}
+function downloadCSV(){
+  const p=activeProject();const csv=buildCSV(p);
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  triggerDownload(blob,safeName(p.name)+"_"+dstamp()+".csv");
+  toast("CSV downloaded");
+}
+function triggerDownload(blob,fname){
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function safeName(s){return(s||"project").replace(/[^a-z0-9]+/gi,"_").slice(0,40);}
+function dstamp(){const d=new Date();return d.toISOString().slice(0,16).replace(/[-:T]/g,"");}
+
+/* ---------- CSV import ---------- */
+function importCSV(file){
+  const rd=new FileReader();
+  rd.onload=()=>{try{parseImport(rd.result);}catch(e){toast("Import failed — unexpected format");}};
+  rd.readAsText(file);
+}
+function parseCSVLine(line){
+  const out=[];let cur="",q=false;
+  for(let i=0;i<line.length;i++){const c=line[i];
+    if(q){if(c==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}
+    else{if(c===','){out.push(cur);cur="";}else if(c==='"')q=true;else cur+=c;}}
+  out.push(cur);return out;
+}
+function parseImport(text){
+  const lines=text.split(/\r?\n/);
+  const meta={};let headerIdx=-1;
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i];
+    if(l.startsWith("#")){
+      const parts=parseCSVLine(l.replace(/^#\s*/,""));
+      if(parts.length>=2)meta[parts[0].trim().toLowerCase()]=parts[1];
+    }else if(l.startsWith("Station,Type")){headerIdx=i;break;}
+  }
+  if(headerIdx<0){toast("Not a RedCirclePRO CSV");return;}
+  const p={id:uid(),name:meta.project||"Imported project",locality:meta.locality||"",machine:meta.machine||"",
+    equip:meta.equipment||"",observer:meta.observer||"",
+    taktPlanned:parseFloat(meta.taktplanned)||null,taktMeasured:parseFloat(meta.taktmeasured)||null,personnel:(meta.personnel||"").split(";").map(s=>s.trim()).filter(Boolean),
+    tprmHistory:[],reasons:JSON.parse(JSON.stringify(DEFAULT_REASONS)),
+    stations:[],segments:[],analyses:{},createdAt:Date.now(),updatedAt:Date.now()};
+  const stationMap={};const reasonSet={};
+  for(let i=headerIdx+1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    if(lines[i].startsWith("#"))break;
+    const c=parseCSVLine(lines[i]);
+    const[stName,type,reason,color,tprm,start,end,durSec,note]=c;
+    if(!stationMap[stName]){const id=uid();stationMap[stName]={id,name:stName,priority:Object.keys(stationMap).length===0,
+      state:"production",open:false,openStart:Date.now(),category:"",color:"",note:""};p.stations.push(stationMap[stName]);}
+    const st=stationMap[stName];
+    const startMs=Date.parse(start)||Date.now();
+    const endMs=end?Date.parse(end):(startMs+(+durSec||0)*1000);
+    p.segments.push({id:uid(),stationId:st.id,type:type||"production",category:reason||"",color:color||"",
+      note:note||"",start:startMs,end:endMs,tprm:tprm||""});
+    if(tprm&&!p.tprmHistory.some(t=>t.tprm===tprm))p.tprmHistory.push({tprm,at:startMs});
+    if(reason&&color)reasonSet[reason]=color;
+  }
+  if(!p.stations.length){toast("No rows found in CSV");return;}
+  if(!p.tprmHistory.length)p.tprmHistory.push({tprm:"",at:Date.now()});
+  p.tprmHistory.sort((a,b)=>a.at-b.at);
+  // merge discovered reasons
+  Object.entries(reasonSet).forEach(([n,col])=>{if(!p.reasons.some(r=>reasonLabel(r)===n))p.reasons.push({name:n,color:col});});
+  state.projects.push(p);save();renderProjects();toast("Imported: "+p.name);
+}
+
+/* ---------- PDF ---------- */
+function downloadPDF(){
+  const p=activeProject();
+  if(!(window.jspdf&&window.jspdf.jsPDF)){toast("PDF library offline — using print dialog");printReport();return;}
+  const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  const segs=allSegments(p);
+  const prod=segs.filter(s=>s.type==="production").reduce((a,s)=>a+(s.end-s.start),0);
+  const down=segs.filter(s=>s.type==="downtime").reduce((a,s)=>a+(s.end-s.start),0);
+  const avail=(prod+down)?(prod/(prod+down)*100):0;
+  doc.setFontSize(16);doc.setTextColor(0,137,61);doc.text("RedCirclePRO — Downtime report",14,15);
+  doc.setFontSize(10);doc.setTextColor(60);
+  const meta=[
+    "Project: "+p.name,"Line: "+(p.machine||"-")+"   Locality: "+(p.locality||"-")+"   Equipment: "+(p.equip||"-"),
+    "Red circle by: "+(p.observer||"-")+"   Takt plan/meas: "+(p.taktPlanned??"-")+"/"+(p.taktMeasured??"-")+"s",
+    "Personnel: "+(p.personnel.join(", ")||"-"),
+    "Production: "+fmtDur(prod)+"    Downtime: "+fmtDur(down)+"    Availability: "+avail.toFixed(1)+"%",
+    "Exported: "+new Date().toLocaleString()
+  ];
+  meta.forEach((m,i)=>doc.text(m,14,23+i*5));
+  const rows=segs.map(s=>[stationName(p,s.stationId),s.type,s.category||"",s.tprm||"",
+    fmtTime(s.start),s.live?"in progress":fmtTime(s.end),fmtDur(s.end-s.start),s.note||""]);
+  doc.autoTable({startY:50,head:[["Station","Type","Reason","TPRM","Start","End","Duration","Note"]],
+    body:rows,styles:{fontSize:8,cellPadding:1.5},headStyles:{fillColor:[0,137,61]},
+    didParseCell:d=>{if(d.section==="body"&&rows[d.row.index][1]==="downtime")d.cell.styles.fillColor=[250,235,235];}});
+  doc.save(safeName(p.name)+"_"+dstamp()+".pdf");
+  toast("PDF downloaded");
+}
+function printReport(){
+  const p=activeProject();const segs=allSegments(p);
+  const w=window.open("","_blank");if(!w){toast("Popup blocked");return;}
+  const rows=segs.map(s=>`<tr><td>${esc(stationName(p,s.stationId))}</td><td>${s.type}</td><td>${esc(s.category||"")}</td>
+    <td>${esc(s.tprm||"")}</td><td>${fmtTime(s.start)}</td><td>${s.live?"in progress":fmtTime(s.end)}</td>
+    <td>${fmtDur(s.end-s.start)}</td><td>${esc(s.note||"")}</td></tr>`).join("");
+  w.document.write(`<html><head><title>${esc(p.name)}</title><style>
+    body{font-family:sans-serif;padding:20px}h1{color:#00893D}table{border-collapse:collapse;width:100%;font-size:12px}
+    th,td{border:1px solid #ccc;padding:4px 6px;text-align:left}th{background:#00893D;color:#fff}</style></head><body>
+    <h1>RedCirclePRO — ${esc(p.name)}</h1><p>${esc(p.machine)} · ${esc(p.locality)} · ${esc(p.equip)}</p>
+    <table><thead><tr><th>Station</th><th>Type</th><th>Reason</th><th>TPRM</th><th>Start</th><th>End</th><th>Duration</th><th>Note</th></tr></thead>
+    <tbody>${rows}</tbody></table></body></html>`);
+  w.document.close();setTimeout(()=>w.print(),300);
+}
+
+/* ---------- Email (mailto) ---------- */
+function emailReport(){
+  const p=activeProject();const segs=allSegments(p);
+  const prod=segs.filter(s=>s.type==="production").reduce((a,s)=>a+(s.end-s.start),0);
+  const down=segs.filter(s=>s.type==="downtime").reduce((a,s)=>a+(s.end-s.start),0);
+  const avail=(prod+down)?(prod/(prod+down)*100):0;
+  const byCat={};segs.filter(s=>s.type==="downtime").forEach(s=>{const k=s.category||"(no reason)";byCat[k]=(byCat[k]||0)+(s.end-s.start);});
+  const pareto=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>"  - "+k+": "+fmtDurWords(v)).join("\n")||"  none";
+  const downLines=segs.filter(s=>s.type==="downtime").map(s=>
+    "  • "+stationName(p,s.stationId)+" | "+(s.category||"(no reason)")+" | "+fmtDur(s.end-s.start)+
+    " | "+fmtTime(s.start)+"–"+(s.live?"now":fmtTime(s.end))+(s.note?" | "+s.note:"")).join("\n")||"  none";
+  ensureAnalyses(p);const actArr=[];
+  Object.entries(p.analyses).forEach(([k,a])=>{const[sid,reason]=k.split("||");
+    (a.actions||[]).forEach(ac=>actArr.push("  • ["+(ac.status||"Open")+"] "+stationName(p,sid)+" / "+reason+": "+(ac.action||"-")+
+      " | area "+(ac.area||"-")+" | resp "+(ac.responsible||"-")+" | due "+(ac.deadline||"-")));});
+  const actBlock=actArr.length?actArr.join("\n"):"  none";
+  const subject=`RedCirclePRO – ${p.name} – ${new Date().toLocaleDateString()}`;
+  const body=
+`RedCirclePRO downtime report
+============================
+Project:    ${p.name}
+Line:       ${p.machine||"-"}
+Locality:   ${p.locality||"-"}
+Equipment:  ${p.equip||"-"}
+Red circle: ${p.observer||"-"}
+Takt:       plan ${p.taktPlanned??"-"}s / meas ${p.taktMeasured??"-"}s
+Personnel:  ${p.personnel.join(", ")||"-"}
+TPRM (now): ${currentTprm(p)||"-"}
+
+SUMMARY
+  ${computeLinePerf(p).label}: ${(computeLinePerf(p).value*100).toFixed(1)}%
+  Production:    ${fmtDur(prod)}
+  Downtime:     ${fmtDur(down)}
+  Availability: ${avail.toFixed(1)}% (blended, all stations)
+  Events:       ${segs.filter(s=>s.type==="downtime").length}
+
+DOWNTIME BY REASON
+${pareto}
+
+DOWNTIME EVENTS
+${downLines}
+
+CORRECTIVE ACTIONS
+${actBlock}
+
+(Attach the CSV / PDF you downloaded for the full log.)
+Generated by RedCirclePRO.`;
+  const url="mailto:?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  if(url.length>1900){
+    // some clients truncate long mailto — offer trimmed version
+    const shortBody=body.split("DOWNTIME EVENTS")[0]+"DOWNTIME EVENTS\n  (see attached CSV/PDF)\n\nGenerated by RedCirclePRO.";
+    window.location.href="mailto:?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(shortBody);
+    toast("Opened email (summary only — attach CSV/PDF)");
+  }else{window.location.href=url;toast("Opening email…");}
+}
+
+/* ---------- theme ---------- */
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute("data-theme");
+  const next=cur==="dark"?"light":"dark";
+  document.documentElement.setAttribute("data-theme",next);
+  try{localStorage.setItem(LS_THEME,next);}catch(e){}
+}
+
+/* ---------- wire up ---------- */
+function init(){
+  load();
+  document.getElementById("appVer").textContent="v"+APP_VERSION;
+  document.getElementById("refreshBtn").onclick=hardRefresh;
+  try{const t=localStorage.getItem(LS_THEME);if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}
+  renderProjects();startTick();checkForUpdate();
+  let resumeId=null;try{resumeId=localStorage.getItem(LS_ACTIVE);}catch(e){}
+
+  document.getElementById("themeBtn").onclick=toggleTheme;
+  document.getElementById("backBtn").onclick=()=>{stopTick();releaseWake();try{localStorage.removeItem(LS_ACTIVE);}catch(e){}show("projects");renderProjects();startTick();};
+  document.getElementById("newProjBtn").onclick=openSetup;
+  document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+  document.getElementById("importFile").onchange=e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value="";};
+
+  document.getElementById("addPersonBtn").onclick=addPerson;
+  document.getElementById("f-person").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addPerson();}});
+  document.getElementById("f-nstations").addEventListener("input",renderStationNames);
+  document.getElementById("startTrackBtn").onclick=startTracking;
+  document.getElementById("cancelSetupBtn").onclick=()=>show("projects");
+
+  document.getElementById("changeTprmBtn").onclick=()=>document.getElementById("tprmOverlay").classList.add("open");
+  document.getElementById("editProjBtn").onclick=openEdit;
+  document.getElementById("eAddPersonBtn").onclick=eAddPerson;
+  document.getElementById("e-person").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();eAddPerson();}});
+  document.getElementById("eAddStationBtn").onclick=eAddStation;
+  document.getElementById("saveEditBtn").onclick=saveEdit;
+  document.getElementById("cancelEditBtn").onclick=()=>{renderTrack();show("track");tick();};
+  document.getElementById("manageReasonsBtn").onclick=openReasons;
+  document.getElementById("viewLogBtn").onclick=()=>{renderLog();show("log");};
+
+  document.getElementById("confirmDownBtn").onclick=confirmDown;
+  document.getElementById("downSearch").addEventListener("input",e=>renderDownList(activeProject(),e.target.value));
+  document.getElementById("cancelDownBtn").onclick=()=>document.getElementById("downOverlay").classList.remove("open");
+  document.getElementById("addReasonBtn").onclick=()=>{const p=activeProject();p.reasons.push({name:"New reason",color:"#4A90E2"});save();openReasons();};
+  document.getElementById("saveReasonsBtn").onclick=saveReasons;
+  document.getElementById("confirmTprmBtn").onclick=confirmTprm;
+  document.getElementById("cancelTprmBtn").onclick=()=>document.getElementById("tprmOverlay").classList.remove("open");
+
+  document.getElementById("backToTrackBtn").onclick=()=>{destroyCharts();renderTrack();show("track");tick();};
+  document.getElementById("chartsBtn").onclick=()=>{renderReport();show("report");};
+  document.getElementById("backToLogBtn").onclick=()=>{destroyCharts();renderLog();show("log");};
+  document.getElementById("reportPdfBtn").onclick=downloadReportPDF;
+  document.getElementById("addActionBtn").onclick=addAction;
+  document.getElementById("rcaDoneBtn").onclick=()=>{document.getElementById("rcaOverlay").classList.remove("open");if(document.getElementById("scr-report").classList.contains("active"))renderReport();};
+  document.getElementById("emailBtn").onclick=emailReport;
+  document.getElementById("csvBtn").onclick=downloadCSV;
+  document.getElementById("pdfBtn").onclick=downloadPDF;
+
+  // close overlay on backdrop click
+  document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){o.classList.remove("open");if(o.id==="rcaOverlay"&&document.getElementById("scr-report").classList.contains("active"))renderReport();}}));
+
+  if(resumeId&&state.projects.some(p=>p.id===resumeId))openProject(resumeId);
+}
+init();
+</script>
+</body>
+</html>
